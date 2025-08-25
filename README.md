@@ -1,93 +1,271 @@
-# :package_description
+# IFS PHP Client
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/:vendor_slug/:package_slug.svg?style=flat-square)](https://packagist.org/packages/:vendor_slug/:package_slug)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/:vendor_slug/:package_slug/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/:vendor_slug/:package_slug/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/:vendor_slug/:package_slug/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/:vendor_slug/:package_slug/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/:vendor_slug/:package_slug.svg?style=flat-square)](https://packagist.org/packages/:vendor_slug/:package_slug)
-<!--delete-->
----
-This repo can be used to scaffold a Laravel package. Follow these steps to get started:
+A modern PHP client for interacting with the IFS ERP system's API. This package provides a clean, object-oriented interface for managing customers, invoices, and proforma invoices in IFS.
 
-1. Press the "Use this template" button at the top of this repo to create a new repo with the contents of this skeleton.
-2. Run "php ./configure.php" to run a script that will replace all placeholders throughout all the files.
-3. Have fun creating your package.
-4. If you need help creating a package, consider picking up our <a href="https://laravelpackage.training">Laravel Package Training</a> video course.
----
-<!--/delete-->
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+## Features
 
-## Support us
-
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/:package_name.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/:package_name)
-
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
-
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
+- **Simple API**: Clean, fluent interface for interacting with IFS
+- **Type Safety**: Strongly-typed DTOs for all API resources
+- **Error Handling**: Comprehensive exception hierarchy for robust error handling
+- **Pagination**: Built-in support for paginated results
+- **PSR-7/18 Compatible**: Built on Guzzle HTTP client
 
 ## Installation
 
-You can install the package via composer:
+You can install the package via Composer:
 
 ```bash
-composer require :vendor_slug/:package_slug
+composer require mllexx/ifs
 ```
 
-You can publish and run the migrations with:
+## Configuration
 
-```bash
-php artisan vendor:publish --tag=":package_slug-migrations"
-php artisan migrate
-```
-
-You can publish the config file with:
-
-```bash
-php artisan vendor:publish --tag=":package_slug-config"
-```
-
-This is the contents of the published config file:
+Before using the IFS client, you need to configure it with your API credentials:
 
 ```php
-return [
-];
-```
+use Mllexx\IFS\IFS;
 
-Optionally, you can publish the views using
-
-```bash
-php artisan vendor:publish --tag=":package_slug-views"
+$ifs = new IFS([
+    'base_uri' => 'https://your-ifs-instance.com/api/v1',
+    'api_key' => 'your-api-key',
+    'timeout' => 30, // Optional, defaults to 30 seconds
+]);
 ```
 
 ## Usage
 
+### Customers
+
+#### Create a new customer
+
 ```php
-$variable = new VendorName\Skeleton();
-echo $variable->echoPhrase('Hello, VendorName!');
+try {
+    $customer = $ifs->customers()->create([
+        'name' => 'Acme Inc.',
+        'email' => 'billing@acme.com',
+        'phone' => '+1234567890',
+        'address' => '123 Business St, City, Country',
+        'tax_id' => 'TAX123456',
+        'currency' => 'USD',
+    ]);
+    
+    echo "Created customer ID: " . $customer->id;
+} catch (\Mllexx\IFS\Exceptions\IFSException $e) {
+    echo "Error creating customer: " . $e->getMessage();
+}
 ```
 
+#### Get a customer
+
+```php
+try {
+    $customer = $ifs->customers()->find('CUST123');
+    
+    echo "Customer: " . $customer->name;
+    echo "Email: " . $customer->email;
+    
+    // Get all invoices for this customer
+    $invoices = $ifs->invoices()->getByCustomer($customer->id);
+    
+    foreach ($invoices as $invoice) {
+        echo "Invoice #" . $invoice->number . ": " . $invoice->total_amount . " " . $invoice->currency;
+    }
+} catch (\Mllexx\IFS\Exceptions\NotFoundException $e) {
+    echo "Customer not found";
+} catch (\Mllexx\IFS\Exceptions\IFSException $e) {
+    echo "Error: " . $e->getMessage();
+}
+```
+
+### Invoices
+
+#### Create an invoice
+
+```php
+try {
+    $invoice = $ifs->invoices()->create([
+        'customer_id' => 'CUST123',
+        'date' => new DateTime(),
+        'due_date' => (new DateTime())->modify('+30 days'),
+        'currency' => 'USD',
+        'items' => [
+            [
+                'description' => 'Web Development Services',
+                'quantity' => 10,
+                'unit_price' => 100.00,
+                'tax_rate' => 20.0,
+            ],
+            [
+                'description' => 'Consulting',
+                'quantity' => 5,
+                'unit_price' => 150.00,
+                'tax_rate' => 20.0,
+            ],
+        ],
+        'notes' => 'Thank you for your business!',
+    ]);
+    
+    echo "Created invoice #" . $invoice->number;
+} catch (\Mllexx\IFS\Exceptions\ValidationException $e) {
+    echo "Validation errors: " . print_r($e->getErrors(), true);
+} catch (\Mllexx\IFS\Exceptions\IFSException $e) {
+    echo "Error creating invoice: " . $e->getMessage();
+}
+```
+
+#### Send an invoice
+
+```php
+try {
+    $success = $ifs->invoices()->send('INV-2023-001', [
+        'send_email' => true,
+        'email_recipients' => ['billing@client.com', 'accounting@client.com'],
+        'email_subject' => 'Your Invoice #{number}',
+        'email_message' => 'Please find attached your invoice for {amount}.'
+    ]);
+    
+    if ($success) {
+        echo "Invoice sent successfully";
+    }
+} catch (\Mllexx\IFS\Exceptions\IFSException $e) {
+    echo "Error sending invoice: " . $e->getMessage();
+}
+```
+
+### Proforma Invoices
+
+#### Create a proforma invoice
+
+```php
+try {
+    $proforma = $ifs->proformaInvoices()->create([
+        'customer_id' => 'CUST123',
+        'date' => new DateTime(),
+        'valid_until' => (new DateTime())->modify('+7 days'),
+        'currency' => 'USD',
+        'items' => [
+            [
+                'description' => 'Web Development Services',
+                'quantity' => 10,
+                'unit_price' => 100.00,
+                'tax_rate' => 20.0,
+            ]
+        ],
+        'notes' => 'This is a proforma invoice',
+    ]);
+    
+    echo "Created proforma invoice #" . $proforma->number;
+} catch (\Mllexx\IFS\Exceptions\IFSException $e) {
+    echo "Error: " . $e->getMessage();
+}
+```
+
+#### Convert proforma invoice to regular invoice
+
+```php
+try {
+    $invoiceId = $ifs->proformaInvoices()->convertToInvoice('PROF-2023-001');
+    echo "Created regular invoice with ID: " . $invoiceId;
+} catch (\Mllexx\IFS\Exceptions\IFSException $e) {
+    echo "Error converting proforma invoice: " . $e->getMessage();
+}
+```
+
+## Error Handling
+
+The package throws specific exceptions for different types of errors:
+
+- `IFSException`: Base exception for all IFS API errors
+- `AuthenticationException`: Authentication failed
+- `AuthorizationException`: Insufficient permissions
+- `NotFoundException`: Requested resource not found
+- `ValidationException`: Invalid request data
+- `RateLimitExceededException`: API rate limit exceeded
+- `ServerException`: Server error (5xx)
+
 ## Testing
+
+### Unit Tests
+
+Run the test suite:
 
 ```bash
 composer test
 ```
 
-## Changelog
+### Integration Tests
 
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
+The package includes integration tests that verify the client works with a real HTTP client. These tests use a mock handler to simulate API responses without making actual HTTP requests.
+
+#### Example Integration Test
+
+```php
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Response;
+use Mllexx\IFS\Http\IFSClient;
+use Mllexx\IFS\IFS;
+
+// Create a mock handler and client
+$mockHandler = new MockHandler();
+$handlerStack = HandlerStack::create($mockHandler);
+
+$client = new IFSClient([
+    'base_uri' => 'https://api.ifs.test/v1',
+    'handler' => $handlerStack,
+    'api_key' => 'test-api-key',
+]);
+
+$ifs = new IFS($client);
+
+// Queue a mock response for customer creation
+$mockHandler->append(new Response(201, [], json_encode([
+    'data' => [
+        'id' => 'CUST123',
+        'name' => 'Test Customer',
+        'email' => 'test@example.com',
+        // ... other customer fields
+    ],
+    'message' => 'Customer created successfully',
+])));
+
+// Now the API call will use the mocked response
+$customer = $ifs->customers()->create([
+    'name' => 'Test Customer',
+    'email' => 'test@example.com',
+    // ... other customer data
+]);
+```
+
+#### Running Integration Tests
+
+To run the integration tests, use PHPUnit:
+
+```bash
+./vendor/bin/phpunit --testsuite Feature
+```
+
+### Test Coverage
+
+The test suite includes:
+
+- **Unit Tests**: Test individual components in isolation
+- **Feature Tests**: Test the integration between components
+- **Error Handling**: Verify proper exception handling
+- **Edge Cases**: Test boundary conditions and error scenarios
+
+To generate a code coverage report (requires Xdebug or PCOV):
+
+```bash
+composer test-coverage
+```
+
+This will generate an HTML coverage report in the `coverage` directory.
 
 ## Contributing
 
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
-
-## Security Vulnerabilities
-
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
-
-## Credits
-
-- [:author_name](https://github.com/:author_username)
-- [All Contributors](../../contributors)
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
