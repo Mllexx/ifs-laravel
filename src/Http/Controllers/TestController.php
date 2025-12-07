@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Mllexx\IFS\Http\IFSClient;
 use Mllexx\IFS\Services\CustomerService;
 use Mllexx\IFS\Services\InvoiceService;
+use Mllexx\IFS\Services\SalesObjectService;
 
 class TestController
 {
@@ -46,6 +47,7 @@ class TestController
         "IntAllowed" => "TRUE",
         "AffBaseLedgPost" => "TRUE",
         "TaxCurrRate" => 1,
+        "DivFactor" => 1,
         "TaxLiability" => "TAX",
         "InvoiceAddressId" => "1",
         "SupplyCountry" => "KE",
@@ -57,12 +59,14 @@ class TestController
     {
         $client = new IFSClient();
         #$response = $client->get('/CustomersHandling.svc/CustomerInfoSet');
-        $customerService = new CustomerService($client);
-        $invoiceService = new InvoiceService($client,'Instant');
+        //$customerService = new CustomerService($client);
+        //$invoiceService = new InvoiceService($client,'Instant');
         //$invoiceService = new InvoiceService($client,);
-        $response = $invoiceService->create($this->invoicePayload);
+        //$response = $invoiceService->create($this->invoicePayload);
         //$response = $invoiceService->list([],3);
+        //dd($response);
+        $salesObjectService = new SalesObjectService();
+        $response = $salesObjectService->getSalesObjects();
         dd($response);
-        #
     }
 }

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Tests\Feature\Http\IFSClientTest" file="tests/Feature/Http/IFSClientTest.php" tests="7" assertions="4" errors="5" failures="1" skipped="0" time="1.171652">
+    <testcase name="it gets access token using client credentials" file="tests/Feature/Http/IFSClientTest.php::it gets access token using client credentials" class="Tests\Feature\Http\IFSClientTest" classname="Tests.Feature.Http.IFSClientTest" assertions="0" time="0.425502">
+      <error type="Mllexx\IFS\Exceptions\IFSException">it gets access token using client credentialsMllexx\IFS\Exceptions\IFSException: API request failed
+at src/Http/IFSClient.php:145
+at src/Http/IFSClient.php:56
+at tests/Feature/Http/IFSClientTest.php:53</error>
+    </testcase>
+    <testcase name="it can be instantiated" file="tests/Feature/Http/IFSClientTest.php::it can be instantiated" class="Tests\Feature\Http\IFSClientTest" classname="Tests.Feature.Http.IFSClientTest" assertions="1" time="0.005498"/>
+    <testcase name="it uses cached token when available" file="tests/Feature/Http/IFSClientTest.php::it uses cached token when available" class="Tests\Feature\Http\IFSClientTest" classname="Tests.Feature.Http.IFSClientTest" assertions="1" time="0.011966">
+      <error type="Mockery\Exception\NoMatchingExpectationException">it uses cached token when availableMockery\Exception\NoMatchingExpectationException: No matching handler found for Mockery_0_Illuminate_Cache_CacheManager::get('ifs_oauth_token', NULL). Either the method was unexpected or its arguments matched no expected argument list for this method
+
+
+at vendor/mockery/mockery/library/Mockery/ExpectationDirector.php:90
+at vendor/laravel/framework/src/Illuminate/Foundation/helpers.php:284
+at src/Http/IFSClient.php:194
+at src/Http/IFSClient.php:170
+at src/Http/IFSClient.php:126
+at src/Http/IFSClient.php:56
+at tests/Feature/Http/IFSClientTest.php:79</error>
+    </testcase>
+    <testcase name="it handles API errors" file="tests/Feature/Http/IFSClientTest.php::it handles API errors" class="Tests\Feature\Http\IFSClientTest" classname="Tests.Feature.Http.IFSClientTest" assertions="0" time="0.189548">
+      <error type="Mllexx\IFS\Exceptions\IFSException">it handles API errorsMllexx\IFS\Exceptions\IFSException: API request failed
+at src/Http/IFSClient.php:145
+at src/Http/IFSClient.php:56
+at tests/Feature/Http/IFSClientTest.php:168</error>
+    </testcase>
+    <testcase name="it handles token request failure" file="tests/Feature/Http/IFSClientTest.php::it handles token request failure" class="Tests\Feature\Http\IFSClientTest" classname="Tests.Feature.Http.IFSClientTest" assertions="2" time="0.176781">
+      <failure type="PHPUnit\Framework\ExpectationFailedException">it handles token request failureFailed asserting that exception message 'API request failed' contains 'Failed to obtain access token'.</failure>
+    </testcase>
+    <testcase name="it makes POST requests" file="tests/Feature/Http/IFSClientTest.php::it makes POST requests" class="Tests\Feature\Http\IFSClientTest" classname="Tests.Feature.Http.IFSClientTest" assertions="0" time="0.164512">
+      <error type="Mllexx\IFS\Exceptions\IFSException">it makes POST requestsMllexx\IFS\Exceptions\IFSException: API request failed
+at src/Http/IFSClient.php:145
+at src/Http/IFSClient.php:69
+at tests/Feature/Http/IFSClientTest.php:140</error>
+    </testcase>
+    <testcase name="it makes GET requests" file="tests/Feature/Http/IFSClientTest.php::it makes GET requests" class="Tests\Feature\Http\IFSClientTest" classname="Tests.Feature.Http.IFSClientTest" assertions="0" time="0.197845">
+      <error type="Mllexx\IFS\Exceptions\IFSException">it makes GET requestsMllexx\IFS\Exceptions\IFSException: API request failed
+at src/Http/IFSClient.php:145
+at src/Http/IFSClient.php:56
+at tests/Feature/Http/IFSClientTest.php:115</error>
+    </testcase>
+  </testsuite>
+</testsuites>

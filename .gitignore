@@ -1,18 +1,11 @@
-# Composer Related
-composer.lock
-/vendor
-
-# Frontend Assets
-/node_modules
-
 # Logs
 npm-debug.log
 yarn-error.log
 
 # Caches
-.phpunit.cache
-.phpunit.result.cache
-/build
+#.phpunit.cache
+#.phpunit.result.cache
+#/build
 
 # IDE Helper
 _ide_helper.php

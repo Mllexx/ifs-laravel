@@ -7,6 +7,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use Mllexx\IFS\DTO\ApiResponse;
 use Mllexx\IFS\Exceptions\IFSException;
 use Mllexx\IFS\Http\ResponseFactory;
+use Illuminate\Support\Facades\Log;
 
 class IFSClient
 {
@@ -21,7 +22,7 @@ class IFSClient
     {
         $this->config = array_merge([
             'base_uri' => config('ifs.base_uri'),
-            'timeout' => 60,
+            'timeout' => 120,
             'client_id' => config('ifs.client_id'),
             'client_secret' => config('ifs.client_secret'),
             'token_endpoint' => config('ifs.token_endpoint'),
@@ -66,7 +67,11 @@ class IFSClient
      */
     public function post(string $endpoint, array $data = []): ApiResponse
     {
-        return $this->request('POST', $endpoint, ['json' => $data]);
+        if (!empty($data)) {
+            return $this->request('POST', $endpoint, ['json' => $data]);
+        }else{
+            return $this->request('POST', $endpoint);
+        }
     }
 
     /**
@@ -153,7 +158,13 @@ class IFSClient
 
             return $apiResponse;
         } catch (GuzzleException $e) {
-            throw new IFSException("HTTP Request failed: " . $e->getMessage(), $e->getCode(), $e);
+            $fullBody = $e->getResponse()->getBody()->getContents();
+            $statusCode = $e->getResponse()->getStatusCode();
+            throw new IFSException(
+                $fullBody ?? 'API request failed',
+                $statusCode,
+                $e,
+            );
         }
     }
 
