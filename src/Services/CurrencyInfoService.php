@@ -19,18 +19,18 @@ class CurrencyInfoService
         'PartyType' => "IfsApp.InstantInvoiceHandling.PartyType'Customer'",
         'Identity' => null,
         'TransCurrency' => null,
-        'CurrencyType' => null,//use defaults
+        'CurrencyType' => 'null',//use defaults
         'Creator' => "'INSTANT_INVOICE_API'",
-        'AdvanceInvoice' => false,
+        'AdvanceInvoice' => 'false',
         'InvoiceDate' => null,// e.g '2025-03-03',
-        'DeliveryDate' => null,// use defaults
-        'VoucherDate' => null,// use defaults
-        'ArrivalDate' => null,// use defaults
-        'CustomsDeclDate' => null,// use defaults
+        'DeliveryDate' =>'null',// use defaults
+        'VoucherDate' => 'null',// use defaults
+        'ArrivalDate' => 'null',// use defaults
+        'CustomsDeclDate' => 'null',// use defaults
         'OutInvCurrRateBase' => "IfsApp.InstantInvoiceHandling.BaseDateOutgoingBase'InvoiceDate'",
         'TaxSellCurrRateBase' => "IfsApp.InstantInvoiceHandling.BaseDateOutgoingBase'InvoiceDate'",
-        'IncInvCurrRateBase' => null, //use defaults
-        'TaxBuyCurrRateBase' => null, //use defaults
+        'IncInvCurrRateBase' => 'null', //use defaults
+        'TaxBuyCurrRateBase' => 'null', //use defaults
     ];
 
     public function __construct()
@@ -38,6 +38,12 @@ class CurrencyInfoService
         $this->client = new IFSClient();
     }
 
+    /**
+     * Fetch currency info from IFS
+     * 
+     * @param array $params
+     * @return array
+     */
     public function getCurrencyInfo($params)
     {
         Log::info("Fetching currency info for currency code [{$params['TransCurrency']}]");
@@ -56,9 +62,14 @@ class CurrencyInfoService
         }
     }
 
+    /**
+     * Compile the query parameters for the endpoint
+     * @param array $params
+     * @return array
+     */
     private function _compileParams($params)
     {
-        $compiledParams = [];
+        $compiledParams = $this->queryParams;
         foreach ($this->queryParams as $key => $defaultValue) {
             if (isset($params[$key])) {
                 $compiledParams[$key] = $params[$key];
@@ -69,9 +80,15 @@ class CurrencyInfoService
         return $compiledParams; 
     }
 
+    /**
+     * Add query parameters to the endpoint
+     * @param string $endpoint
+     * @param array $params
+     * @return string
+     */
     private function _addQueryParamsToEndpoint($endpoint, $params)
     {
-        $queryString = http_build_query($params);
+        $queryString = http_build_query($params,'', ',');
         return str_replace('<queryParams>', $queryString, $endpoint);
     }
 }

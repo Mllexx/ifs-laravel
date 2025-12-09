@@ -7,7 +7,7 @@ use Mllexx\IFS\Http\IFSClient;
 use Mllexx\IFS\Services\CustomerService;
 use Mllexx\IFS\Services\InvoiceService;
 use Mllexx\IFS\Services\SalesObjectService;
-use Mllexx\IFS\IFS\Services\CurrencyInfoService;
+use Mllexx\IFS\Services\CurrencyInfoService;
 
 class TestController
 {
@@ -69,10 +69,10 @@ class TestController
         //$salesObjectService = new SalesObjectService();
         //$response = $salesObjectService->getSalesObjects();
         $payload = [
-            'Company' => 'GBHL',
+            'Company' => "'GBHL'",
             //'Identity' => 'GB-GIL01K',
-            'Identity' => 'GB-MOM01U',
-            'TransCurrency' => 'USD',
+            'Identity' => "'GB-MOM01U'",
+            'TransCurrency' => "'KES'",
             'InvoiceDate' => now()->format('Y-m-d'),
         ];
         $currencyInfoService = new CurrencyInfoService();
