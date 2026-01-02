@@ -240,8 +240,8 @@ class CustomerService
                 'PartyType',
                 'Identiy',
                 'Country',
-                'B2bCustomer',
-                'CorporateForm',
+                //'B2bCustomer',
+                //'CorporateForm',
                 'CreationDate',
                 'CurrencyCode'
             ];
@@ -255,34 +255,52 @@ class CustomerService
      * @param int $companyId
      * @return array
      */
-    public function syncCustomers($companyId=1,$overwrite=true){
+    public function syncCustomers($companyId=1,$overwrite=false){
         Log::info("Syncing customers from IFS");
         //TODO: Implement batching if there are many customers
         //TODO: Implement last synced at to only get new/updated customers
         //TODO: Implement logic to check existence of sync tables if not exists create them (run migrations if not exists)
         try{
+            //$customers = $this->list();
+            $customers = $this->listAggregated();
             DB::beginTransaction();
             if($overwrite){
                 Log::info("Clearing existing customers from database");
                 IFSCustomers::where('company_id',$companyId)->delete();
             }
-            //$customers = $this->list();
-            $customers = $this->listAggregated();
             Log::info("Adding customers to database");
             $lastSyncedAt = Carbon::now();
             foreach ($customers as $customer) {
-                IFSCustomers::updateOrCreate([
-                    'company_id' => $companyId,
-                    'customer_id' => $customer->C2_CUSTOMER_ID,
-                    'name' => $customer->C3_CUSTOMER_NAME,
-                    'party' => $customer->C4_PARTY_TYPE,
-                    'country' => $customer->C8_COUNTRY,
-                    //'b2b_customer' => $customer->B2bCustomer,
-                    //'corporate_form' => $customer->CorporateForm,
-                    'creation_date' => $customer->C7_CREATION_DATE, 
-                    'currency_code' => $customer->C5_CURRENCY, 
-                    'last_synced_at' => $lastSyncedAt,
-                ]);
+                try {
+                    // Check if customer already exists
+                    $existing = IFSCustomers::where('customer_id', $customer->C2_CUSTOMER_ID)
+                        ->where('company_id', $companyId)
+                        ->first();
+                    if ($existing) {
+                        Log::info("Customer with ID {$customer->C2_CUSTOMER_ID} already exists. Skipping.");
+                        continue;
+                    }
+                    //
+                    IFSCustomers::updateOrCreate([
+                        'company_id' => $companyId,
+                        'customer_id' => $customer->C2_CUSTOMER_ID,
+                        'name' => $customer->C3_CUSTOMER_NAME,
+                        //'party' => $customer->C4_PARTY_TYPE,
+                        'country' => $customer->C8_COUNTRY,
+                        //'b2b_customer' => $customer->B2bCustomer,
+                        //'corporate_form' => $customer->CorporateForm,
+                        'creation_date' => $customer->C7_CREATION_DATE, 
+                        'currency_code' => $customer->C5_CURRENCY, 
+                        'last_synced_at' => $lastSyncedAt,
+                    ]);
+                } catch (\Exception $e) {
+                    report($e);
+                    if ($e->getCode() == 23505) { // Integrity constraint violation
+                        Log::warning("Customer with code {$customer->C2_CUSTOMER_ID} already exists. Skipping.");
+                        continue;
+                    }
+                    Log::error("Error checking existence for customer ID {$customer->C2_CUSTOMER_ID}: " . $e->getMessage());
+                }
             }
             DB::commit();
             Log::info("Customers added to database");

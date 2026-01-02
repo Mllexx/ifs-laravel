@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Mllexx\IFS\Exceptions\IFSException;
 use Mllexx\IFS\Http\IFSClient;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Models\IFSSalesObjects;
 use Mllexx\IFS\IFS;
 
@@ -63,32 +64,57 @@ class SalesObjectService{
         }
     }
 
-    public function syncSalesObjects(){
+    public function syncSalesObjects($overwrite=false){
         Log::info("Syncing sales objects for company [$this->companyCode]");
         try{
             $list = $this->getSalesObjects();
+            DB::beginTransaction();
+            if($overwrite){
+                Log::info("Clearing existing sales objects from database");
+                IFSSalesObjects::where('company_code',$this->companyCode)->delete();
+            }
             Log::info("Sales objects fetched: " . count($list));
             $lastSyncedAt = Carbon::now();
             foreach($list as $item){
-                $salesObject = (object)$item; 
-                IFSSalesObjects::create([
-                    'object_code' => $salesObject->ObjectId,
-                    'description' => $salesObject->Description,
-                    'has_tax' => $salesObject->Taxable ?? false,
-                    'tax_code' => $salesObject->TaxCode,
-                    'price' => $salesObject->Price,
-                    'account' => $salesObject->CodeA,
-                    'company_code' => $salesObject->Company,
-                    'uom' => $salesObject->UnitOfMeasure,
-                    'created_at' => now(),
-                ]);
+                try {
+                    // Check if sales object already exists
+                    $existing = IFSSalesObjects::where('object_code', $item['ObjectId'])
+                        ->where('company_code', $this->companyCode)
+                        ->first();
+                    if ($existing) {
+                        Log::info("Sales object with code {$item['ObjectId']} already exists. Skipping.");
+                        continue;
+                    }
+                    //    
+                    $salesObject = (object)$item; 
+                    IFSSalesObjects::updateOrCreate([
+                        'object_code' => $salesObject->ObjectId,
+                        'description' => $salesObject->Description,
+                        'has_tax' => $salesObject->Taxable ?? false,
+                        'tax_code' => $salesObject->TaxCode,
+                        'price' => $salesObject->Price,
+                        'account' => $salesObject->CodeA,
+                        'company_code' => $salesObject->Company,
+                        'uom' => $salesObject->UnitOfMeasure,
+                        'created_at' => now(),
+                    ]);
+                } catch (\Exception $e) {
+                    report($e);
+                    if ($e->getCode() == 23505) { // Integrity constraint violation
+                        Log::warning("Sales object with code {$item['ObjectId']} already exists. Skipping.");
+                        continue;
+                    }
+                    Log::error("Error checking existing sales object: " . $e->getMessage());
+                }
             }
+            DB::commit();
             Log::info("Sales objects synced successfully");
             return [
                 'success'=>true,
                 'message' => "Sales objects synced successfully"
             ];
         }catch(\Exception $e){
+            DB::rollBack();
             Log::error("Error syncing sales objects: " . $e->getMessage());
             report($e);
             return [
