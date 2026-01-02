@@ -289,7 +289,7 @@ class CustomerService
                         'country' => $customer->C8_COUNTRY,
                         //'b2b_customer' => $customer->B2bCustomer,
                         //'corporate_form' => $customer->CorporateForm,
-                        'creation_date' => $customer->C7_CREATION_DATE, 
+                        'creation_date' => Carbon::parse($customer->C7_CREATION_DATE)->toDateString(), 
                         'currency_code' => $customer->C5_CURRENCY, 
                         'last_synced_at' => $lastSyncedAt,
                     ]);
