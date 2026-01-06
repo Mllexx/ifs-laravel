@@ -125,6 +125,8 @@ class InvoiceService
      */
     public function create(mixed $data,$notes = null): Invoice
     {
+        //Log::channel('ifs-integration')->info("Creating invoice with data:[ ".json_encode($data)."]");
+        Log::info("Creating invoice with data:[ ".json_encode($data)."]");
         $validationResponse = $this->validatePostData($data);
         $response = $this->client->post($this->endpoint['head'], $data);
         $erpInvoice = $response->getData();
