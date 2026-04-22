@@ -52,7 +52,6 @@ class CustomerService
      * @return Customer
      * @throws IFSException
      */
-
     function find(string $customerId): Customer
     {
         $endpoint = str_replace('<customer_id>', $customerId, $this->endpoints['single']);
@@ -72,7 +71,7 @@ class CustomerService
     public function list(array $filters = [],$batchSize=15): array
     {
         $endpoint = $this->endpoints['list'].'?'.$this->startsWithFilter('CustomerId','GB-');
-        $endpoint .= '&'.$this->selectCols();
+        //$endpoint .= '&'.$this->selectCols();
 
         $response = $this->client->get($endpoint);
         return $this->client
@@ -235,13 +234,12 @@ class CustomerService
             $columns = [
                 'CustomerId',
                 'Name',
-                'Company',
                 'Party',
                 'PartyType',
-                'Identiy',
+                'Identity',
                 'Country',
-                //'B2bCustomer',
-                //'CorporateForm',
+                'B2bCustomer',
+                'CorporateForm',
                 'CreationDate',
                 'CurrencyCode'
             ];
@@ -263,6 +261,8 @@ class CustomerService
         try{
             //$customers = $this->list();
             $customers = $this->listAggregated();
+            Log::info("Fetched ".count($customers)." customers from IFS. Starting update transaction.");
+            //
             DB::beginTransaction();
             if($overwrite){
                 Log::info("Clearing existing customers from database");
@@ -273,9 +273,10 @@ class CustomerService
             foreach ($customers as $customer) {
                 try {
                     // Check if customer already exists
-                    $existing = IFSCustomers::where('customer_id', $customer->C2_CUSTOMER_ID)
+                    $existing = IFSCustomers::where('customer_id', trim($customer->C2_CUSTOMER_ID))
                         ->where('company_id', $companyId)
                         ->first();
+                    Log::info(json_encode($existing));
                     if ($existing) {
                         Log::info("Customer with ID {$customer->C2_CUSTOMER_ID} already exists. Skipping.");
                         continue;
@@ -284,12 +285,18 @@ class CustomerService
                     IFSCustomers::updateOrCreate([
                         'company_id' => $companyId,
                         'customer_id' => $customer->C2_CUSTOMER_ID,
+                        //'customer_id' => $customer->CustomerId,
                         'name' => $customer->C3_CUSTOMER_NAME,
+                        //'name' => $customer->Name,
                         //'party' => $customer->C4_PARTY_TYPE,
                         'country' => $customer->C8_COUNTRY,
+                        //'country' => $customer->Country,
                         //'b2b_customer' => $customer->B2bCustomer,
                         //'corporate_form' => $customer->CorporateForm,
-                        'creation_date' => Carbon::parse($customer->C7_CREATION_DATE)->toDateString(), 
+                        'creation_date' => !empty($customer->C7_CREATION_DATE) 
+                        //'creation_date' => !empty($customer->CreationDate) 
+                            ? Carbon::createFromFormat('d/m/Y', $customer->C7_CREATION_DATE)->toDateString() 
+                            : null, 
                         'currency_code' => $customer->C5_CURRENCY, 
                         'last_synced_at' => $lastSyncedAt,
                     ]);

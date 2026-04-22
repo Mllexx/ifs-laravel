@@ -53,7 +53,7 @@ class SalesObjectService{
     public function getSalesObjects(){
         Log::info("Fetching sales objects for company [$this->companyCode]");
         $endpoint = $this->addFilters($this->endpoints['salesObjects']);
-        Log::info("Calling the enpoint [$endpoint]");
+        Log::info("Calling the endpoint [$endpoint]");
         $response = $this->client->get($endpoint);
         if($response->isSuccessful()){
             Log::info("Sales objects fetched successfully");

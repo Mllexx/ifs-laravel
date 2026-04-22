@@ -51,7 +51,7 @@ class CurrencyInfoService
             $this->endpoints['currencyInfo'],
             $this->_compileParams($params)
         );
-        Log::info("Calling the enpoint [$endpoint]");
+        Log::info("Calling the endpoint [$endpoint]");
         $response = $this->client->get($endpoint);
         if($response->isSuccessful()){
             Log::info("Currency info fetched successfully");

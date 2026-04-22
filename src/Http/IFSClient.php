@@ -39,6 +39,7 @@ class IFSClient
             'base_uri' => rtrim($this->config['base_uri'], '/') . '/',
             'timeout' => $this->config['timeout'],
             'http_errors' => true,
+            'verify' => false, // Disable SSL certificate verification
         ]);
 
         $this->responseFactory = new ResponseFactory();
